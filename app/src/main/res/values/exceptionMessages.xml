@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="MESSAGE_NOT_SEND_EXCEPTION">Error sending message to Cadena</string>
+</resources>
