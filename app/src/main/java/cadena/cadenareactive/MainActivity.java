@@ -12,7 +12,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.SmsManager;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -24,13 +23,21 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.JsonParseException;
 
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 import cadena.cadenareactive.broadcastreceivers.LocationSmsReceiver;
 import cadena.cadenareactive.com.cadenareactive.model.Location;
 import cadena.cadenareactive.services.ReactiveRestClient;
 import cadena.cadenareactive.services.RestReceiver;
+import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -129,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void receiveTestService() {
         RestReceiver restReceiver = new RestReceiver();
-        restReceiver.locationReceiver();
+        restReceiver.asyncLocationReceiver();
     }
 
     private void rxJavaServiceReceive() {
@@ -138,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 //.subscribeOn(Schedulers.io())
                 .subscribeOn(Schedulers.newThread()) //--Instead of running on normal io, we want our REST calls be made on new thread.
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Location>() {
+                .subscribe(new Observer<Location>() { //Observers are consumers of an Observable’s asynchronous data stream.
                     @Override
                     public void onCompleted() {
                         System.out.println("---------------------------------On Completed");
@@ -156,8 +163,66 @@ public class MainActivity extends AppCompatActivity {
 
                     }
                 });
+
+    }
+
+    /**
+     * Same results with Subscribers and pure RxJava(without using Retrofit)
+     * Making Observables(by calling Observable.create()) in the Activity can cause memory leak
+     */
+    private void pureRxJavaObserv() {
+        Observable.create(new Observable.OnSubscribe<Location>() {
+            @Override
+            public void call(Subscriber<? super Location> subscriber) {
+                if (!subscriber.isUnsubscribed()) {
+                    try {
+                        final RestReceiver restReceiver = new RestReceiver();
+                        Location location = restReceiver.syncLocationReceiver();//--load from service(this is a sync method call, thread will be blocked until fetch);
+                        subscriber.onNext(location); //--Subscriber takes on new data
+                        Location newerLocation = restReceiver.syncLocationReceiver();
+                        subscriber.onNext(newerLocation);
+                        subscriber.onCompleted(); //--No more values will be sent
+                    } catch (JsonParseException | IOException e) {
+                        subscriber.onError(e);
+                    }
+
+                }
+            }
+        }).subscribeOn(Schedulers.io()); //--The call() method will be called in a separate thread
+
+
+    }
+
+    private void reactOnCollectedData() {
+        //--JavaMag version: (All actions are taken in the main thread)
+        List<String> data =
+                Arrays.asList("foo", "bar", "baz");
+        Random random = new Random();
+        Observable<String> _observable =
+                Observable.create(subscriber -> {  //--Creating a publisher
+                    for (String s : data) {  //--A list of locations can be here
+                        if (random.nextInt(6) == 0) {
+                            subscriber.onError(
+                                    new RuntimeException("Bad luck for you..."));
+                        }
+                        subscriber.onNext(s); //--New data is sent to the Subscriber
+                    }
+                    subscriber.onCompleted(); //--No more values will be sent
+                });
+
+        //--Testing it 10 times
+        for (int i = 0; i < 10; i++) {
+            System.out.println("=======================================");
+            _observable.subscribe(
+                    next -> System.out.println("Next: "+ next),
+                    error -> System.out.println("Whoops"),
+                    () -> System.out.println("Done"));
+        }
+        //--_observable.retry(5) : Error recovery(5 times try)
+        //--*With Observable.merge and Observable.zip We can merge the results from different streams
     }
 }
+
 
 
 

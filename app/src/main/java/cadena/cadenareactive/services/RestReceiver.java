@@ -1,17 +1,36 @@
 package cadena.cadenareactive.services;
 
 
+import com.google.gson.Gson;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class RestReceiver {
+import cadena.cadenareactive.com.cadenareactive.model.Location;
 
-    public void locationReceiver() {
+public class RestReceiver {
+    String getLocationBaseURL = "http://10.0.2.2:8080/CadenaServerJAXRS/rest/location/get";
+
+    public Location syncLocationReceiver() throws IOException {
+        URL url = new URL(getLocationBaseURL); //Specify the URL
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        if (connection.getResponseCode() == 200) {
+            final Gson gson = new Gson();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            reader.close();
+            return gson.fromJson(reader, Location.class);
+        } else {
+            throw new IOException("sService is not available");
+        }
+    }
+
+    public void asyncLocationReceiver() {
         LocationRunnable location = new LocationRunnable("locationThread");
-            location.start();
+        location.start();
     }
 
     public class LocationRunnable implements Runnable {
@@ -26,8 +45,7 @@ public class RestReceiver {
         @Override
         public void run() {
             try {
-                String serviceLocation = "http://10.0.2.2:8080/CadenaServerJAXRS/rest/location/get";
-                URL url = new URL(serviceLocation); //Specify the URL
+                URL url = new URL(getLocationBaseURL); //Specify the URL
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 if (connection.getResponseCode() == 200) {

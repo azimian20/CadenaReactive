@@ -4,4 +4,5 @@
     <string name="CADENA_PHONE_NUMBER">+4798845911</string>
     <string name="CADENA_LOCATION_SMS_CONTAINER">LOCATION_SMS</string>
     <string name="google_maps_key">AIzaSyCD9AhirgSmZXg-z_VsYnyv8GQpoypZpVU</string>
+    <string name="LOCATION_SERVICE_GET_BASE_URL">http://10.0.2.2:8080/CadenaServerJAXRS/rest/location/get</string>
 </resources>
