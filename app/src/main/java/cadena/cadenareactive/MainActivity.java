@@ -33,6 +33,7 @@ import java.util.Random;
 
 import cadena.cadenareactive.broadcastreceivers.LocationSmsReceiver;
 import cadena.cadenareactive.com.cadenareactive.model.Location;
+import cadena.cadenareactive.com.cadenareactive.model.LocationServiceResponse;
 import cadena.cadenareactive.services.ReactiveRestClient;
 import cadena.cadenareactive.services.RestReceiver;
 import rx.Observable;
@@ -85,14 +86,14 @@ public class MainActivity extends AppCompatActivity {
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        System.out.println("++++++++++++++ response:" + response);
+                        System.out.println(" response:" + response);
                         //locationResponse = response;
                         ((TextView) findViewById(R.id.txtService)).setText("res:" + response);
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println("++++++++++ error:" + error);
+                System.out.println("error:" + error);
             }
         });
 
@@ -139,27 +140,30 @@ public class MainActivity extends AppCompatActivity {
         restReceiver.asyncLocationReceiver();
     }
 
-    private void rxJavaServiceReceive() {
+    private void rxJavaServiceReceive() {  //--Retrofit enabled service receiver.
+
+        //--Here we will have a loop for multiple asynchronous service calls
         subscription = ReactiveRestClient.getInstance()
-                .getLocation()
+                .getLocation(27l)
                 //.subscribeOn(Schedulers.io())
                 .subscribeOn(Schedulers.newThread()) //--Instead of running on normal io, we want our REST calls be made on new thread.
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Location>() { //Observers are consumers of an Observable’s asynchronous data stream.
+                .observeOn(AndroidSchedulers.mainThread()) //--To consume the results in the main thread to show the results
+                .subscribe(new Observer<LocationServiceResponse>() { //Observers are consumers of an Observable’s asynchronous data stream.
                     @Override
                     public void onCompleted() {
-                        System.out.println("---------------------------------On Completed");
+                        System.out.println("--------------------------------- On Completed");
                     }
 
                     @Override
                     public void onError(Throwable e) {
+                        System.out.println("---------------------------------------------------");
                         e.printStackTrace();
-                        System.out.println("---------------------------------On Error");
+                        System.out.println("----------- Error Message-----------:"+e.getMessage());
                     }
 
                     @Override
-                    public void onNext(Location location) { //--When REST call receives data.
-                        System.out.println("---------------------------------location: " + location.getgMapGps());
+                    public void onNext(LocationServiceResponse locationServiceResponses) {
+                        System.out.println("--------------------------------- Locations: " + locationServiceResponses.getDeviceLocationses().get(0).getDevice().getPhoneNumber());
 
                     }
                 });
@@ -171,7 +175,8 @@ public class MainActivity extends AppCompatActivity {
      * Making Observables(by calling Observable.create()) in the Activity can cause memory leak
      */
     private void pureRxJavaObserv() {
-        Observable.create(new Observable.OnSubscribe<Location>() {
+        //--The name “OnSubscribe” provides us with a clue about when this code is typically executed: when an Observer is registered to receive the items emitted by this Observable through a call to Observable.subscribe().
+        Observable.create(new Observable.OnSubscribe<Location>() { //--OnSubscribe() Invoked when Observable.subscribe is called.
             @Override
             public void call(Subscriber<? super Location> subscriber) {
                 if (!subscriber.isUnsubscribed()) {
@@ -193,6 +198,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /**
+     * -Observable: source of data
+     * -Observer(subscriber): listeners to the observables: Location in our case
+     * -When a data is available on Observable, onNext is called on subscribers.
+     */
     private void reactOnCollectedData() {
         //--JavaMag version: (All actions are taken in the main thread)
         List<String> data =
@@ -200,7 +210,7 @@ public class MainActivity extends AppCompatActivity {
         Random random = new Random();
         Observable<String> _observable =
                 Observable.create(subscriber -> {  //--Creating a publisher
-                    for (String s : data) {  //--A list of locations can be here
+                    for (String s : data) {  //--A list of locations can be here(List<String> data is the publisher)
                         if (random.nextInt(6) == 0) {
                             subscriber.onError(
                                     new RuntimeException("Bad luck for you..."));
@@ -209,19 +219,75 @@ public class MainActivity extends AppCompatActivity {
                     }
                     subscriber.onCompleted(); //--No more values will be sent
                 });
-
         //--Testing it 10 times
         for (int i = 0; i < 10; i++) {
             System.out.println("=======================================");
             _observable.subscribe(
-                    next -> System.out.println("Next: "+ next),
+                    next -> System.out.println("Next: " + next),
                     error -> System.out.println("Whoops"),
                     () -> System.out.println("Done"));
         }
         //--_observable.retry(5) : Error recovery(5 times try)
         //--*With Observable.merge and Observable.zip We can merge the results from different streams
+
+
     }
 }
+//--Study:[Book: Reactive Java Programming]
+/**
+ *
+ *
+
+
+
+ public void subscribeToObservable(Observable<T> observable){
+ observable.subscribe(new Subscriber<>() {  //--A subscriber implements Observer
+    @Override
+    public void onNext(T nextItem) {
+    // invoked when Observable emits an item
+    // usually you will consume the nextItem here
+    }
+ });
+
+-Observable.from() , a static factory method that can create an Observable out of an array, an iterable, or a Future.
+
+
+
+
+    -Observable.create() is the method that lets you create an Observable from scratch. For example, if you want to create an observable that emits only one string, “Hello!”
+    Observable.create(new Observable.OnSubscribe<String>() {
+        @Override
+        public void call(Subscriber<? super String> observer) {
+            observer.onNext("Hello!");   //--Emission of of string "HELLO" is done by the OBSERVER
+            observer.onCompleted();
+        }
+    }
+ );
+
+
+ -“Suppose now that you want to create an observable that emits a JSON string resulting from a networking operation. If the response is successful, the observable will emit the result and terminate. Otherwise, it will raise an error.
+
+    Observable.create(new Observable.OnSubscribe<String>() {
+        @Override
+        public void call(Subscriber<? super String> observer) {
+            Response response = executeNextworkCall();
+            if (observer.isUnsubscribed()) {
+                // do not emit the item,”
+                // observer is not subscribed anymore
+                return;
+            }
+            if (response != null && response.isSuccessful()) {
+            observer.onNext(convertToJson(response));
+            observer.onCompleted();
+            } else {
+                observer.onError(new Exception("network call error"));
+            }
+        }
+    }
+    );
+ */
+
+
 
 
 
