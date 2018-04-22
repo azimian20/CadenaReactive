@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">CadenaReactive</string>
     <string name="title_activity_maps">Map</string>
-    <string name="CADENA_PHONE_NUMBER">+4798845911</string>
     <string name="CADENA_LOCATION_SMS_CONTAINER">LOCATION_SMS</string>
-    </resources>
+</resources>
