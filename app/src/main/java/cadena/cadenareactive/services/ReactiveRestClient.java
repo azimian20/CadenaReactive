@@ -1,11 +1,14 @@
 package cadena.cadenareactive.services;
 
+import android.content.Context;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import cadena.cadenareactive.R;
 import cadena.cadenareactive.com.cadenareactive.model.LocationServiceResponse;
 import cadena.cadenareactive.util.DateDeserializer;
 import okhttp3.OkHttpClient;
@@ -16,12 +19,11 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
 
 public class ReactiveRestClient {
-    private static final String LOCATION_BASE_URL = "http://10.0.2.2:8088/CadenaServerJAXRS/rest/location/";
 
     private static ReactiveRestClient instance;
     private ReactiveRestService reactiveRestService;
 
-    private ReactiveRestClient() {
+    private ReactiveRestClient(String baseUrl) {
         HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
         interceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
         final OkHttpClient okHttpClient = new OkHttpClient.Builder()
@@ -36,7 +38,7 @@ public class ReactiveRestClient {
         gsonBuilder.registerTypeAdapter(Date.class, new DateDeserializer());
         Gson gson = gsonBuilder.create();
 
-        final Retrofit retrofit = new Retrofit.Builder().client(okHttpClient).baseUrl(LOCATION_BASE_URL)
+        final Retrofit retrofit = new Retrofit.Builder().client(okHttpClient).baseUrl(baseUrl)
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create(gson))  //--From Retrofit 2.0.0 and later the default converter is ResponseBody. We need this line to convert to String(or any other type)
                 .build();
@@ -44,9 +46,9 @@ public class ReactiveRestClient {
         reactiveRestService = retrofit.create(ReactiveRestService.class);
     }
 
-    public static ReactiveRestClient getInstance() {
+    public static ReactiveRestClient getInstance(String baseUrl) {
         if (instance == null) {
-            instance = new ReactiveRestClient();
+            instance = new ReactiveRestClient(baseUrl);
         }
         return instance;
     }

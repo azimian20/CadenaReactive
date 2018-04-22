@@ -21,12 +21,14 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.JsonParseException;
 
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -47,12 +49,30 @@ public class MainActivity extends AppCompatActivity {
 
     //Volley request queue
     public static RequestQueue requestQueue;
-    private Subscription subscription;
+    private Subscription subscription; //--Retrofit subscription
+
+    List<LocationServiceResponse> locationServiceResponses = new ArrayList<>();
+    List<LocationServiceResponse> locationServiceResponses2 = new ArrayList<>();
+    Long reactiveTime = 0l;
+    Long nonReactiveTime = 0l;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        TextView txtService = findViewById(R.id.txtService);
+        txtService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                System.out.println("\n\n");
+                System.out.println("______________ Reactive locationServiceResponses:" + locationServiceResponses.size());
+                System.out.println("______________ Non Reactive locationServiceResponses2:" + locationServiceResponses2.size());
+                System.out.println("______________ ReactiveTime:" + reactiveTime);
+                System.out.println("______________ NonReactiveTime:" + nonReactiveTime);
+                System.out.println("\n\n");
+
+            }
+        });
 
 
         Button btnFindCadena = findViewById(R.id.btnFindCadena);
@@ -63,12 +83,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button btnReceiveService = findViewById(R.id.btnReceiveService);
-        btnReceiveService.setOnClickListener(new View.OnClickListener() {
+        Button btnReactiveReceiveService = findViewById(R.id.btnReactiveService);
+        btnReactiveReceiveService.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 //receiveTestService();  //--Async REST request in separated thread
-                rxJavaServiceReceive();  //--RxJava service receiver.
+                reactiveServiceReceive();  //--RxJava service receiver.
+            }
+        });
+
+        Button btnNonReactiveReceiveService = findViewById(R.id.btnNonReactiveService);
+        btnNonReactiveReceiveService.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //receiveTestService();  //--Async REST request in separated thread
+                nonReactiveServiceReceive();  //--RxJava service receiver.
             }
         });
 
@@ -79,6 +108,9 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        /*
+
         //-Volley service receiver:
         String url = "http://10.0.2.2:8080/CadenaServerJAXRS/rest/location/get";
         requestQueue = Volley.newRequestQueue(this.getApplicationContext());
@@ -96,6 +128,8 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println("error:" + error);
             }
         });
+
+        */
 
     }
 
@@ -140,8 +174,55 @@ public class MainActivity extends AppCompatActivity {
         restReceiver.asyncLocationReceiver();
     }
 
-    private void rxJavaServiceReceive() {  //--Retrofit enabled service receiver.
+    Long startTime2 = 0l;
 
+    private void nonReactiveServiceReceive() {
+        startTime2 = System.currentTimeMillis();
+        nonReactiveTime = 0l;
+        //-Volley service receiver:
+
+
+        String baseUrl = getApplicationContext().getString(R.string.LOCATION_SERVICE_GET_BASE_URL);
+        String serviceEndPointUrl = "nonReactiveGet/27";
+        String url = baseUrl + serviceEndPointUrl;
+        requestQueue = Volley.newRequestQueue(this.getApplicationContext());
+
+        for (int i = 0; i < 30; i++) {
+            JsonObjectRequest locationRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+
+                            System.out.println("Volley response:" + response);
+                            locationServiceResponses2.add(new LocationServiceResponse());
+                            //nonReactiveTime = System.currentTimeMillis() - startTime2;
+
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    System.out.println("volley error:" + error);
+                }
+            });
+
+            requestQueue.add(locationRequest);
+        }
+        requestQueue.addRequestFinishedListener(request -> {
+            nonReactiveTime = nonReactiveTime + (System.currentTimeMillis() - startTime2);
+            System.out.println("________onRequestFinished:" + nonReactiveTime);
+        });
+
+    }
+
+    Long startTime = 0l;
+
+    private void reactiveServiceReceive() {  //--Retrofit enabled service receiver.
+        startTime = System.currentTimeMillis();
+        reactiveTime = 0l;
+
+
+        /*
+        //--Single time service calling
         //--Here we will have a loop for multiple asynchronous service calls
         subscription = ReactiveRestClient.getInstance()
                 .getLocation(27l)
@@ -167,6 +248,40 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+        */
+
+
+        //--Calling multiple times:
+
+
+        String baseUrl = getApplicationContext().getString(R.string.LOCATION_SERVICE_GET_BASE_URL);
+        Observable<LocationServiceResponse> observable;
+        observable = ReactiveRestClient.getInstance(baseUrl)
+                .getLocation(27l)
+                .subscribeOn(Schedulers.newThread()) //--Instead of running on normal io, we want our REST calls be made on new thread.
+                .observeOn(AndroidSchedulers.mainThread());
+        for (int i = 0; i < 30; i++) {
+            subscription = observable.subscribe(new Observer<LocationServiceResponse>() { //Observers are consumers of an Observable’s asynchronous data stream.
+                @Override
+                public void onCompleted() {
+                    reactiveTime = reactiveTime + (System.currentTimeMillis() - startTime);
+                    System.out.println("________Retrofit finished:" + reactiveTime);
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    System.out.println("--------------------------------- Reactive On Error");
+                    e.printStackTrace();
+                    System.out.println("----------- Error Message -----------:" + e.getMessage());
+                }
+
+                @Override
+                public void onNext(LocationServiceResponse locationServiceResponse) {
+                    System.out.println("--------------------------------- Reactive Locations: " + locationServiceResponse.getDeviceLocationses().get(0).getDevice().getPhoneNumber());
+                    locationServiceResponses.add(locationServiceResponse);
+                }
+            });
+        }
     }
 
     /**
@@ -234,56 +349,49 @@ public class MainActivity extends AppCompatActivity {
 }
 //--Study:[Book: Reactive Java Programming]
 /**
+ * public void subscribeToObservable(Observable<T> observable){
+ * observable.subscribe(new Subscriber<>() {  //--A subscriber implements Observer
  *
- *
-
-
-
- public void subscribeToObservable(Observable<T> observable){
- observable.subscribe(new Subscriber<>() {  //--A subscriber implements Observer
-    @Override
-    public void onNext(T nextItem) {
-    // invoked when Observable emits an item
-    // usually you will consume the nextItem here
-    }
- });
-
--Observable.from() , a static factory method that can create an Observable out of an array, an iterable, or a Future.
-
-
-
-
-    -Observable.create() is the method that lets you create an Observable from scratch. For example, if you want to create an observable that emits only one string, “Hello!”
-    Observable.create(new Observable.OnSubscribe<String>() {
-        @Override
-        public void call(Subscriber<? super String> observer) {
-            observer.onNext("Hello!");   //--Emission of of string "HELLO" is done by the OBSERVER
-            observer.onCompleted();
-        }
-    }
- );
-
-
- -“Suppose now that you want to create an observable that emits a JSON string resulting from a networking operation. If the response is successful, the observable will emit the result and terminate. Otherwise, it will raise an error.
-
-    Observable.create(new Observable.OnSubscribe<String>() {
-        @Override
-        public void call(Subscriber<? super String> observer) {
-            Response response = executeNextworkCall();
-            if (observer.isUnsubscribed()) {
-                // do not emit the item,”
-                // observer is not subscribed anymore
-                return;
-            }
-            if (response != null && response.isSuccessful()) {
-            observer.onNext(convertToJson(response));
-            observer.onCompleted();
-            } else {
-                observer.onError(new Exception("network call error"));
-            }
-        }
-    }
-    );
+ * @Override public void onNext(T nextItem) {
+ * // invoked when Observable emits an item
+ * // usually you will consume the nextItem here
+ * }
+ * });
+ * <p>
+ * -Observable.from() , a static factory method that can create an Observable out of an array, an iterable, or a Future.
+ * <p>
+ * <p>
+ * <p>
+ * <p>
+ * -Observable.create() is the method that lets you create an Observable from scratch. For example, if you want to create an observable that emits only one string, “Hello!”
+ * Observable.create(new Observable.OnSubscribe<String>() {
+ * @Override public void call(Subscriber<? super String> observer) {
+ * observer.onNext("Hello!");   //--Emission of of string "HELLO" is done by the OBSERVER
+ * observer.onCompleted();
+ * }
+ * }
+ * );
+ * <p>
+ * <p>
+ * -“Suppose now that you want to create an observable that emits a JSON string resulting from a networking operation. If the response is successful, the observable will emit the result and terminate. Otherwise, it will raise an error.
+ * <p>
+ * Observable.create(new Observable.OnSubscribe<String>() {
+ * @Override public void call(Subscriber<? super String> observer) {
+ * Response response = executeNextworkCall();
+ * if (observer.isUnsubscribed()) {
+ * // do not emit the item,”
+ * // observer is not subscribed anymore
+ * return;
+ * }
+ * if (response != null && response.isSuccessful()) {
+ * observer.onNext(convertToJson(response));
+ * observer.onCompleted();
+ * } else {
+ * observer.onError(new Exception("network call error"));
+ * }
+ * }
+ * }
+ * );
  */
 
 

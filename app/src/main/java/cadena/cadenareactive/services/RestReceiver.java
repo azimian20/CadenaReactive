@@ -24,7 +24,7 @@ public class RestReceiver {
             reader.close();
             return gson.fromJson(reader, Location.class);
         } else {
-            throw new IOException("sService is not available");
+            throw new IOException("Service is not available");
         }
     }
 

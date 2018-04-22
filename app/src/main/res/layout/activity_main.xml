@@ -7,6 +7,22 @@
     tools:context=".MainActivity">
 
     <Button
+        android:id="@+id/btnNonReactiveService"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center_vertical|center_horizontal"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/ic_cherohala_transparent_web"
+        android:gravity="bottom"
+        android:text="NON Reactive"
+        android:textAlignment="center"
+        app:layout_constraintBottom_toTopOf="@+id/btnReactiveService"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
         android:id="@+id/btnFindCadena"
         android:layout_width="150dp"
         android:layout_height="150dp"
@@ -21,7 +37,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:id="@+id/btnReceiveService"
+        android:id="@+id/btnReactiveService"
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:layout_gravity="center_vertical|center_horizontal"
@@ -30,6 +46,8 @@
         android:layout_marginStart="8dp"
         android:background="@drawable/ic_cherohala_transparent_web"
         android:gravity="bottom"
+        android:text="Reactive"
+        android:textAlignment="center"
         app:layout_constraintBottom_toTopOf="@+id/btnFindCadena"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -49,8 +67,8 @@
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:text="..."
-        app:layout_constraintBottom_toTopOf="@+id/btnReceiveService"
+        android:text="IIIIIIIIIIIIIIIIIIIIIIIIIII"
+        app:layout_constraintBottom_toTopOf="@+id/btnNonReactiveService"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 

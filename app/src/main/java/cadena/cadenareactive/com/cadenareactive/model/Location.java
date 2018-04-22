@@ -2,68 +2,71 @@ package cadena.cadenareactive.com.cadenareactive.model;
 
 import java.util.Date;
 
-public class Location extends DomainEntity{
+import cadena.cadenareactive.util.DateStringFormatter;
 
-	private String nmeaGps;
+public class Location extends DomainEntity {
 
-	private String gMapGps;
+    private String nmeaGps;
 
-	public Location(Date dateTime, String description, Long deviceId, String gMapGps, Long idLong, String messageId, String nmeaGps) {
-		super.setDescription(description);
-		super.setIdLong(idLong);
-		this.nmeaGps = nmeaGps;
-		this.gMapGps = gMapGps;
-		this.dateTime = dateTime;
-		this.messageId = messageId;
-		this.deviceId = deviceId;
-	}
+    private String gMapGps;
 
-	private Date dateTime;
-	
-	private String messageId ;
-	
-	private Long deviceId ;
+    public Location(String dateTime, String description, Long deviceId, String gMapGps, Long idLong, String messageId, String nmeaGps) {
+        System.out.println("---------Location constructor");
+        super.setDescription(description);
+        super.setIdLong(idLong);
+        this.nmeaGps = nmeaGps;
+        this.gMapGps = gMapGps;
+        this.dateTime = dateTime;//DateStringFormatter.format(dateTime);
+        this.messageId = messageId;
+        this.deviceId = deviceId;
+    }
 
-	public Date getDateTime() {
-		return dateTime;
-	}
+    private String dateTime;
 
-	public void setDateTime(Date dateTime) {
-		this.dateTime = dateTime;
-	}
+    private String messageId;
 
-	public String getNmeaGps() {
-		return nmeaGps;
-	}
+    private Long deviceId;
 
-	public void setNmeaGps(String nmeaGps) {
-		this.nmeaGps = nmeaGps;
-	}
+    public String getDateTime() {
+        System.out.println("-----------Location dateTime getter");
+        return dateTime;
+    }
 
-	public String getgMapGps() {
-		return gMapGps;
-	}
+    public void setDateTime(String dateTime) {
+        this.dateTime = dateTime;//DateStringFormatter.format(dateTime);
+    }
 
-	public void setgMapGps(String gMapGps) {
-		this.gMapGps = gMapGps;
-	}
+    public String getNmeaGps() {
+        return nmeaGps;
+    }
 
-	public String getMessageId() {
-		return messageId;
-	}
+    public void setNmeaGps(String nmeaGps) {
+        this.nmeaGps = nmeaGps;
+    }
 
-	public void setMessageId(String messageId) {
-		this.messageId = messageId;
-	}
+    public String getgMapGps() {
+        return gMapGps;
+    }
 
-	public Long getDeviceId() {
-		return deviceId;
-	}
+    public void setgMapGps(String gMapGps) {
+        this.gMapGps = gMapGps;
+    }
 
-	public void setDeviceId(Long deviceId) {
-		this.deviceId = deviceId;
-	}
+    public String getMessageId() {
+        return messageId;
+    }
 
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+    public Long getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(Long deviceId) {
+        this.deviceId = deviceId;
+    }
 
 
 }
