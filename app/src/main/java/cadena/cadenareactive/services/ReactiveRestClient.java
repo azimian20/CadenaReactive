@@ -3,16 +3,12 @@ package cadena.cadenareactive.services;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import cadena.cadenareactive.com.cadenareactive.model.Location;
 import cadena.cadenareactive.com.cadenareactive.model.LocationServiceResponse;
 import cadena.cadenareactive.util.DateDeserializer;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
@@ -20,10 +16,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import rx.Observable;
 
 public class ReactiveRestClient {
-
-    //private static final String LOCATION_BASE_URL = "http://10.0.2.2:8088/CadenaServerJAXRS/rest/location/";
-    private static final String LOCATION_BASE_URL = "http://37.191.197.208:8088/CadenaServerJAXRS/rest/location/";
-    //private static final String LOCATION_BASE_URL = "http://169.254.214.0:8088/CadenaServerJAXRS/rest/location/";
+    private static final String LOCATION_BASE_URL = "http://10.0.2.2:8088/CadenaServerJAXRS/rest/location/";
 
     private static ReactiveRestClient instance;
     private ReactiveRestService reactiveRestService;

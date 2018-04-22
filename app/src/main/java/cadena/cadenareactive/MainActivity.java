@@ -164,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onNext(LocationServiceResponse locationServiceResponses) {
                         System.out.println("--------------------------------- Locations: " + locationServiceResponses.getDeviceLocationses().get(0).getDevice().getPhoneNumber());
-
                     }
                 });
 
